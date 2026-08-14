@@ -1,6 +1,6 @@
 # Distro: Debian 13.x trixie (https://hub.docker.com/_/php)
 # Source: https://github.com/docker-library/php/blob/master/8.4/trixie/apache/Dockerfile
-FROM hhdev/php:8.4-apache-dev
+FROM hhdev/php:8.2-apache-dev
 
 # Application User & Group
 ARG APP_USER_NAME=developer

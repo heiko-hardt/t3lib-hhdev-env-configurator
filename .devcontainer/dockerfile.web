@@ -1,0 +1,25 @@
+# Distro: Debian 13.x trixie (https://hub.docker.com/_/php)
+# Source: https://github.com/docker-library/php/blob/master/8.4/trixie/apache/Dockerfile
+FROM hhdev/php:8.4-apache-dev
+
+# Application User & Group
+ARG APP_USER_NAME=developer
+ARG APP_USER_ID=1000
+ARG APP_GROUP_NAME=developer
+ARG APP_GROUP_ID=1000
+
+# System user and group
+RUN groupadd -g ${APP_GROUP_ID} ${APP_GROUP_NAME} \
+    && useradd -u ${APP_USER_ID} -g ${APP_GROUP_ID} -G 0 -m -d /home/${APP_USER_NAME} -s /bin/bash $APP_USER_NAME \
+    && echo "${APP_USER_NAME} ALL=(ALL) NOPASSWD:ALL" >/etc/sudoers.d/${APP_USER_NAME} \
+    && chmod 0440 /etc/sudoers.d/${APP_USER_NAME}
+
+USER ${APP_USER_NAME}:${APP_GROUP_NAME}
+
+ENV HOME=/home/${APP_USER_NAME} \
+    TZ=Europe/Berlin \
+    LANG=de_DE.UTF-8 \
+    LANGUAGE=de_DE:en_US \
+    LC_ALL=de_DE.UTF-8
+
+RUN curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh | zsh

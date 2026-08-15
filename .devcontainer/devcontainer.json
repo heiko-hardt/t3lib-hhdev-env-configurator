@@ -29,6 +29,6 @@
 	},
 	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
 	"runArgs": [
-		"--name=heikohardt-t3lib-hhdev-env-configurator"
+		"--name=heikohardt-t3lib-env-configurator"
 	]
 }

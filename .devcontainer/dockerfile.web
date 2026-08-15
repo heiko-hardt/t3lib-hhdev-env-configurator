@@ -1,6 +1,6 @@
 # Distro: Debian 13.x trixie (https://hub.docker.com/_/php)
-# Source: https://github.com/docker-library/php/blob/master/8.4/trixie/apache/Dockerfile
-FROM hhdev/php:8.2-apache-dev
+# Source: https://github.com/docker-library/php/blob/master/8.2/trixie/apache/Dockerfile
+FROM php:8.2.33-cli-trixie
 
 # Application User & Group
 ARG APP_USER_NAME=developer
@@ -8,18 +8,51 @@ ARG APP_USER_ID=1000
 ARG APP_GROUP_NAME=developer
 ARG APP_GROUP_ID=1000
 
+# Locales & Timezone
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends locales tzdata \
+    && rm -rf /var/lib/apt/lists/* \
+    && sed -i -e 's/# de_DE.UTF-8 UTF-8/de_DE.UTF-8 UTF-8/' \
+              -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen \
+    && locale-gen \
+    && ln -sf /usr/share/zoneinfo/Europe/Berlin /etc/localtime \
+    && echo "Europe/Berlin" > /etc/timezone
+
 # System user and group
-RUN groupadd -g ${APP_GROUP_ID} ${APP_GROUP_NAME} \
-    && useradd -u ${APP_USER_ID} -g ${APP_GROUP_ID} -G 0 -m -d /home/${APP_USER_NAME} -s /bin/bash $APP_USER_NAME \
-    && echo "${APP_USER_NAME} ALL=(ALL) NOPASSWD:ALL" >/etc/sudoers.d/${APP_USER_NAME} \
-    && chmod 0440 /etc/sudoers.d/${APP_USER_NAME}
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends sudo \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd -g $APP_GROUP_ID $APP_GROUP_NAME \
+    && useradd -u $APP_USER_ID -g $APP_GROUP_ID -m -s /bin/bash $APP_USER_NAME \
+    && echo $APP_USER_NAME ALL=\(root\) NOPASSWD:ALL >/etc/sudoers.d/$APP_USER_NAME \
+    && chmod 0440 /etc/sudoers.d/$APP_USER_NAME \
+    && mkdir -p /workspaces \
+    && chown ${APP_USER_NAME}:${APP_GROUP_NAME} /workspaces
+
+# https://getcomposer.org/download/ (Latest LTS)
+ARG COMPOSER_VERSION="2.10.2"
+# https://packagist.org/packages/xdebug/xdebug
+ARG PHP_XDEBUG_VERSION="3.5.3"
+# https://github.com/php/pie/releases
+ARG PIE_VERSION="1.4.9"
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git make unzip  \
+    && rm -rf /var/lib/apt/lists/* \
+    # Setup PIE (PHP Installer for Extensions)
+    && curl -L https://github.com/php/pie/releases/download/${PIE_VERSION}/pie.phar -o /usr/local/bin/pie \
+    && chmod +x /usr/local/bin/pie \
+    # Install Extension(s)
+    && pie install xdebug/xdebug:${PHP_XDEBUG_VERSION} \
+    # Add custom ini parameter
+    && printf "[PHP]\nmemory_limit = 512M\nmax_execution_time = 3600\nmax_input_vars = 1500\nupload_max_filesize = 50M\npost_max_size = 50M\n\n[Date]\ndate.timezone = Europe/Berlin\n" > "$PHP_INI_DIR/conf.d/additional.ini" \
+    # Fetch & install composer binary
+    && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --version=${COMPOSER_VERSION} --filename=composer
 
 USER ${APP_USER_NAME}:${APP_GROUP_NAME}
 
-ENV HOME=/home/${APP_USER_NAME} \
-    TZ=Europe/Berlin \
-    LANG=de_DE.UTF-8 \
+ENV LANG=de_DE.UTF-8 \
     LANGUAGE=de_DE:en_US \
     LC_ALL=de_DE.UTF-8
 
-RUN curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh | zsh
+WORKDIR /workspace

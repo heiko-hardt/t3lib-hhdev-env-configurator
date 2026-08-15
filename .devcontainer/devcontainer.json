@@ -6,12 +6,8 @@
 	"name": "T3Lib: TYPO3 env configurator",
 	"containerEnv": {
 		// used for the default shell in the container
-		"SHELL": "/bin/zsh"
+		"HHConf": "example"
 	},
-	"forwardPorts": [
-		8080
-	],
-	"overrideCommand": false,
 	"remoteUser": "developer",
 	"customizations": {
 		"vscode": {
@@ -25,7 +21,7 @@
 				"esbenp.prettier-vscode"
 			]
 		}
-	},	
+	},
 	// Docker Compose specific properties
 	// https://containers.dev/implementors/json_reference/#image-specific
 	"build": {
@@ -34,10 +30,5 @@
 	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
 	"runArgs": [
 		"--name=heikohardt-t3lib-hhdev-env-configurator"
-	],
-	// Lifecycle scripts
-	// https://containers.dev/implementors/json_reference/#lifecycle-scripts
-	"postCreateCommand": {
-		"www": "sudo rm -rf /var/www/html && sudo chown -R developer:developer /var/www && ln -s /workspaces/${localWorkspaceFolderBasename} /var/www/html"
-	}
+	]
 }
